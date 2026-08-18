@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright 2026 NVIDIA CORPORATION & AFFILIATES
+# SPDX-License-Identifier: Apache-2.0
+
+[workspace]
+
+[package]
+name = "yaml-sigil-traits-no-std-probe"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.95.0"
+publish = false
+
+[dependencies]
+yaml-sigil-traits = { path = "..", default-features = false }

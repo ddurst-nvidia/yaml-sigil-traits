@@ -146,6 +146,7 @@ The development toolchain follows Rust `stable` through
 
 ```shell
 cargo xtask ci
+cargo xtask no-std
 cargo package
 ```
 
@@ -154,6 +155,12 @@ dependency advisories. The GitHub Actions workflow runs the same validation as
 independent steps. `cargo package` performs separate local package assembly and
 verification without uploading anything; it is not part of the non-release CI
 sequence.
+
+`cargo xtask no-std` uses Rust `1.95.0` to compile the library and the
+compile-only public API consumer for `thumbv7em-none-eabi`, runs host tests with
+default features disabled, and rejects standard-library, entropy-backend,
+PEM/PKCS#8, Tokio, tracing, and schema-validation activation in the normal
+alloc-only dependency graph.
 
 ## Publishing
 

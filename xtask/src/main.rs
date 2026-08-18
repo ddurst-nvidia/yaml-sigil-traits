@@ -5,6 +5,7 @@
 //! `cargo xtask <COMMAND>`.
 
 mod ci;
+mod no_std;
 mod package_content;
 mod release;
 mod release_version;
@@ -39,6 +40,13 @@ fn main() -> ExitCode {
                 }
             }
         }
+        "no-std" if remaining.is_empty() => match no_std::run(&workspace_root()) {
+            Ok(()) => ExitCode::SUCCESS,
+            Err(error) => {
+                eprintln!("no-std failed: {error}");
+                ExitCode::FAILURE
+            }
+        },
         "release-version" => match release_version::run(&workspace_root(), &remaining) {
             Ok(()) => ExitCode::SUCCESS,
             Err(error) => {
@@ -57,11 +65,11 @@ fn main() -> ExitCode {
             print_usage();
             ExitCode::SUCCESS
         }
-        "ci" | "package-content" if is_help_request(&remaining) => {
+        "ci" | "no-std" | "package-content" if is_help_request(&remaining) => {
             print_usage();
             ExitCode::SUCCESS
         }
-        "package-content" => {
+        "no-std" | "package-content" => {
             eprintln!("{command} does not accept arguments");
             print_usage();
             ExitCode::FAILURE
@@ -118,10 +126,12 @@ fn is_help_request(args: &[String]) -> bool {
 
 fn print_usage() {
     eprintln!(
-        "usage:\n  cargo xtask ci [--candidate-root PATH]\n  cargo xtask package-content\n  \
+        "usage:\n  cargo xtask ci [--candidate-root PATH]\n  cargo xtask no-std\n  \
+         cargo xtask package-content\n  \
          cargo xtask release <COMMAND>\n  cargo xtask release-version <COMMAND>\n\n\
          commands:\n  ci               Run the complete non-release validation sequence.\n  \
                             --candidate-root validates another checkout.\n  \
+         no-std           Validate the alloc-only public API and dependency graph.\n  \
          package-content  Compare Cargo's source list with the committed inventory.\n  \
          release          Run provider-neutral release preparation and verification.\n  \
          release-version  Manage provider-neutral release version transactions."

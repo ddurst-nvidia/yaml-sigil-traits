@@ -193,7 +193,29 @@ cargo xtask ci --candidate-root PATH
 The command still builds and runs the xtask from the current checkout; only
 the repository content being validated comes from `PATH`.
 
-The command runs these checks in order:
+Run the alloc-only compile, host-test, and dependency checks with:
+
+```shell
+cargo xtask no-std
+```
+
+The command uses Rust `1.95.0` and runs:
+
+```shell
+cargo +1.95.0 fmt --manifest-path no-std-probe/Cargo.toml --all --check
+cargo +1.95.0 check --lib --no-default-features --target thumbv7em-none-eabi
+cargo +1.95.0 check --manifest-path no-std-probe/Cargo.toml --target thumbv7em-none-eabi
+cargo +1.95.0 test --no-default-features
+cargo +1.95.0 tree --edges normal --no-default-features --target thumbv7em-none-eabi --format '{p}|{f}'
+```
+
+Install the target before running the command locally:
+
+```shell
+rustup target add --toolchain 1.95.0 thumbv7em-none-eabi
+```
+
+The `cargo xtask ci` command runs these checks in order:
 
 ```shell
 rumdl check .
