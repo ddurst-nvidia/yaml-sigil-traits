@@ -36,5 +36,9 @@ inherent_method_must_use_added = "warn"
 [lints.rust]
 unsafe_code = "forbid"
 
+[features]
+default = ["std"]
+std = ["thiserror/std"]
+
 [dependencies]
-thiserror = "2.0"
+thiserror = { version = "2.0", default-features = false }
