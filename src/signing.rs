@@ -8,11 +8,12 @@
 //! `DefaultSigner` / `DefaultAsyncSigner` ZSTs live in `yaml-sigil-signing`,
 //! which re-exports these items.
 
-use std::fmt;
+use alloc::{string::String, vec::Vec};
+use core::fmt;
 
 use crate::{
-    AlgorithmId, ProtobufWireDecodeAdvertisement, YamlSignatureDocumentDuplicateKeyPolicy,
-    YamlSignatureDocumentUnknownFieldPolicy,
+    AlgorithmId, CryptoRngCore, ProtobufWireDecodeAdvertisement,
+    YamlSignatureDocumentDuplicateKeyPolicy, YamlSignatureDocumentUnknownFieldPolicy,
 };
 use thiserror::Error;
 
@@ -151,6 +152,23 @@ pub trait Signer {
     ) -> SignOutcome;
 }
 
+/// Companion extension point for signers that accept caller-supplied
+/// cryptographic randomness.
+///
+/// The companion keeps [`Signer`] object-safe and preserves its existing
+/// method contract. Implementations advertise the algorithms available when a
+/// caller RNG is present through [`SignerWithRng::capabilities_with_rng`].
+pub trait SignerWithRng: Signer {
+    /// Capability surface available when the caller supplies an RNG.
+    fn capabilities_with_rng(&self) -> SignerCapabilities;
+    /// Unified sign entry using caller-supplied cryptographic randomness.
+    fn sign_with_rng(
+        &self,
+        req: &SignRequest<'_, Self::Ed25519SigningKey, Self::P256SigningKey>,
+        rng: &mut dyn CryptoRngCore,
+    ) -> SignOutcome;
+}
+
 /// Async sibling of [`Signer`]. Same method semantics; the only difference is
 /// that [`AsyncSigner::sign`] returns a `Future`.
 ///
@@ -174,5 +192,20 @@ pub trait AsyncSigner: Send + Sync {
     fn sign<'a>(
         &'a self,
         req: &'a SignRequest<'_, Self::Ed25519SigningKey, Self::P256SigningKey>,
+    ) -> impl core::future::Future<Output = SignOutcome> + Send + 'a;
+}
+
+/// Async companion to [`SignerWithRng`].
+///
+/// The caller RNG must be `Send`, and the returned future retains the
+/// [`AsyncSigner`] `Send` guarantee.
+pub trait AsyncSignerWithRng: AsyncSigner {
+    /// Capability surface available when the caller supplies an RNG.
+    fn capabilities_with_rng(&self) -> SignerCapabilities;
+    /// Unified async sign entry using caller-supplied cryptographic randomness.
+    fn sign_with_rng<'a>(
+        &'a self,
+        req: &'a SignRequest<'_, Self::Ed25519SigningKey, Self::P256SigningKey>,
+        rng: &'a mut (dyn CryptoRngCore + Send),
     ) -> impl core::future::Future<Output = SignOutcome> + Send + 'a;
 }

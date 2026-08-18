@@ -8,8 +8,9 @@
 //! `DefaultVerifier` / `DefaultAsyncVerifier` ZSTs live in
 //! `yaml-sigil-verification`, which re-exports these items.
 
-use std::convert::TryFrom;
-use std::fmt;
+use alloc::{string::String, vec::Vec};
+use core::convert::TryFrom;
+use core::fmt;
 
 use crate::{
     AlgorithmId, ProtobufWireDecodeAdvertisement, YamlSignatureDocumentDuplicateKeyPolicy,

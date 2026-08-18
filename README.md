@@ -21,7 +21,7 @@ This crate exposes the portable contract for these API areas.
 
 | API | Sync trait | Async trait | Capability DTO |
 |-----|------------|-------------|----------------|
-| Signing | `Signer` | `AsyncSigner` | `SignerCapabilities` |
+| Signing | `Signer`, `SignerWithRng` | `AsyncSigner`, `AsyncSignerWithRng` | `SignerCapabilities` |
 | Transcription | `Transcriber` | `AsyncTranscriber` | `TranscriberCapabilities` |
 | Verification | `Verifier` | `AsyncVerifier` | `VerifierCapabilities` |
 
@@ -96,6 +96,26 @@ The artifact's unsigned `keyid` remains a deployment-specific lookup hint.
 Concrete implementation crates own key parsing and may narrow behavior, such
 as requiring a configured trust store. Document those narrowings in the
 implementation crate.
+
+`SignerWithRng` is an object-safe companion to `Signer` for implementations
+that accept caller-supplied cryptographic randomness. Its async counterpart,
+`AsyncSignerWithRng`, requires a `Send` caller RNG and returns a `Send` future.
+The crate re-exports `CryptoRngCore` so implementations and callers share the
+same RNG trait version.
+
+## Feature configuration
+
+Default features enable `std`. Disable default features to use the complete
+trait and DTO surface with `no_std + alloc`:
+
+```toml
+[dependencies]
+yaml-sigil-traits = { version = "0.4.0-rc.1", default-features = false }
+```
+
+The application supplies its allocator and panic behavior. Async trait callers
+also supply their executor. This crate defines the caller-RNG contract but does
+not choose an entropy source or provide a signer implementation.
 
 ## Specification source
 

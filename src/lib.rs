@@ -21,6 +21,10 @@
 //! use generic bounds (`<S: AsyncSigner>`), not `&dyn AsyncSigner`. See
 //! this repository's `AGENTS.md`.
 
+#![cfg_attr(not(feature = "std"), no_std)]
+
+extern crate alloc;
+
 pub mod algorithm;
 pub mod conformance;
 pub mod signing;
@@ -32,3 +36,4 @@ pub use conformance::{
     OuterConformance, ProtobufWireDecodeAdvertisement, YamlSignatureDocumentDuplicateKeyPolicy,
     YamlSignatureDocumentUnknownFieldPolicy,
 };
+pub use rand_core::CryptoRngCore;

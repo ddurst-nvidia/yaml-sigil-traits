@@ -9,6 +9,8 @@
 //! `DefaultTranscriber` / `DefaultAsyncTranscriber` ZSTs live in
 //! `yaml-sigil-transcription`, which re-exports these items.
 
+use alloc::{string::String, vec::Vec};
+
 use crate::OuterConformance;
 use thiserror::Error;
 
