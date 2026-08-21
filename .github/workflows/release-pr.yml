@@ -52,6 +52,7 @@ jobs:
     if: ${{ vars.YAML_SIGIL_RELEASE_PR_APP_CLIENT_ID != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    environment: protected-automation
     permissions:
       contents: read
       pull-requests: read
@@ -79,13 +80,13 @@ jobs:
         with:
           cache: false
 
-      # This section would benefit by a change to the action allowlist
-      - name: Install release-plz
-        uses: taiki-e/install-action@43aecc8d72668fbcfe75c31400bc4f890f1c5853 # v2.83.2
+      - name: Install exact cargo-binstall
+        uses: cargo-bins/cargo-binstall@732870f031d2fb36309d0deaf36abcc704a7be65 # v1.20.1
         with:
-          checksum: true
-          fallback: cargo-binstall
-          tool: release-plz@0.3.160
+          version: 1.20.1
+
+      - name: Install and verify release analyzers
+        run: bash .github/scripts/install-release-tools.sh
 
       - name: Require the expected repository and current main
         run: |
@@ -149,15 +150,34 @@ jobs:
           REQUESTED_MODE: ${{ inputs.mode || 'next-candidate' }}
         run: bash .github/scripts/resolve-release-intent.sh
 
+      - name: Prepare the official tagged baseline
+        id: baseline
+        if: ${{ steps.published.outputs.available == 'true' }}
+        env:
+          GIT_CONFIG_COUNT: 1
+          GIT_CONFIG_KEY_0: remote.origin.pushurl
+          GIT_CONFIG_VALUE_0: disabled://yaml-sigil-release-proposal
+        run: |
+          python3 .github/scripts/prepare_release_baseline.py \
+            --repository "${GITHUB_REPOSITORY}" \
+            --version "${{ steps.published.outputs.version }}" \
+            --head "${GITHUB_SHA}" \
+            --output "${RUNNER_TEMP}/official-release-baseline" \
+            --expected-fetch-url "https://github.com/${GITHUB_REPOSITORY}"
+
       - name: Generate and validate release transaction
         id: generate
         if: ${{ steps.published.outputs.available == 'true' }}
         env:
           EFFECTIVE_BUMP: ${{ steps.intent.outputs.bump }}
-          GITHUB_TOKEN: ${{ github.token }}
+          GIT_TOKEN: ${{ github.token }}
           MODE: ${{ steps.intent.outputs.mode }}
           PUBLISHED_VERSION: ${{ steps.published.outputs.version }}
+          REGISTRY_MANIFEST_PATH: ${{ steps.baseline.outputs.manifest }}
           RELEASE_MARKER: ${{ steps.intent.outputs.marker }}
+          GIT_CONFIG_COUNT: 1
+          GIT_CONFIG_KEY_0: remote.origin.pushurl
+          GIT_CONFIG_VALUE_0: disabled://yaml-sigil-release-proposal
         run: bash .github/scripts/generate-release-proposal.sh
 
       # GitHub signs Git Database commits created with the App installation

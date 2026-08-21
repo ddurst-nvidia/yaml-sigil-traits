@@ -44,9 +44,6 @@ owned branch, repository writers use the permanent manual release-proposal
 fallback in `RELEASING.md`. Contributors still express version intent here and
 do not edit versions on their change branches.
 
-Pull-request snapshot publication does not change the contributor's branch.
-The workflow applies its `0.pr` version only in an ephemeral checkout.
-
 ## Pull-request CI
 
 Pull-request CI runs from a repository-owned `pull-request/<number>` branch at

@@ -25,20 +25,6 @@ pub fn run(root: &Path, args: &[String]) -> Result<(), String> {
             eprintln!("release-version: manifest version is {version}");
             Ok(())
         }
-        "snapshot" => {
-            let pr = required_value(args, "--pr")?
-                .parse::<u64>()
-                .map_err(|_| "--pr must be a positive pull-request number".to_string())?;
-            if pr == 0 {
-                return Err("--pr must be a positive pull-request number".to_string());
-            }
-            let sha = required_value(args, "--sha")?;
-            ensure_only_flags(args, &["--pr", "--sha"])?;
-            let version = snapshot_version(&read_version(root)?, pr, sha)?;
-            write_version(root, &version)?;
-            println!("{version}");
-            Ok(())
-        }
         "candidate" => {
             let published = Version::parse(required_value(args, "--published")?)
                 .map_err(|error| format!("invalid --published version: {error}"))?;
@@ -86,7 +72,7 @@ pub(crate) fn check(root: &Path) -> Result<(), String> {
 
 fn usage() -> String {
     "usage: cargo xtask release-version \
-     <show|check|snapshot --pr N --sha SHA|candidate --published VERSION \
+     <show|check|candidate --published VERSION \
      --bump auto|patch|minor|major --date YYYY-MM-DD [--release-notes]|\
      promote-stable --date YYYY-MM-DD>"
         .to_string()
@@ -220,18 +206,6 @@ fn replace_section_version(manifest: &str, section: &str, version: &str) -> Resu
     let mut output = lines.join("\n");
     output.push('\n');
     Ok(output)
-}
-
-fn snapshot_version(current: &Version, pr: u64, sha: &str) -> Result<Version, String> {
-    if sha.len() < 12 || !sha.bytes().all(|byte| byte.is_ascii_hexdigit()) {
-        return Err("--sha must contain at least 12 hexadecimal characters".to_string());
-    }
-    let short_sha = sha[..12].to_ascii_lowercase();
-    Version::parse(&format!(
-        "{}.{}.{}-0.pr.{pr}.commit.sha{short_sha}",
-        current.major, current.minor, current.patch
-    ))
-    .map_err(|error| format!("construct snapshot version: {error}"))
 }
 
 fn candidate_version(
@@ -405,15 +379,6 @@ fn insert_after_unreleased(body: &str, section: &str) -> Result<String, String> 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn snapshot_uses_core_and_twelve_hex_characters() {
-        let current = Version::parse("0.4.0-rc.3").unwrap();
-        assert_eq!(
-            snapshot_version(&current, 17, "ABCDEF0123456789").unwrap(),
-            Version::parse("0.4.0-0.pr.17.commit.shaabcdef012345").unwrap()
-        );
-    }
 
     #[test]
     fn auto_advances_rc() {
